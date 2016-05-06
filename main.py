@@ -3,6 +3,8 @@ import os
 import jinja2
 import webapp2
 
+from models import Sporocilo
+
 
 template_dir = os.path.join(os.path.dirname(__file__), "templates")
 jinja_env = jinja2.Environment(loader=jinja2.FileSystemLoader(template_dir), autoescape=False)
@@ -32,38 +34,42 @@ class MainHandler(BaseHandler):
         return self.render_template("chat.html")
 
 
-class ProcesirajSporociloHandler(BaseHandler):
+class PosljiSporociloHandler(BaseHandler):
     def post(self):
         uporabnikovo_ime = self.request.get("ime")
         uporabnikovo_sporocilo = self.request.get("sporocilo")
 
-        # izpis = "<b>" + uporabnikovo_ime + ":</b> " + uporabnikovo_sporocilo
-        # self.write(izpis)
+        sporocilo = Sporocilo(ime=uporabnikovo_ime, tekst=uporabnikovo_sporocilo)
+        sporocilo.put()
+
+        return self.render_template("sporocilo-poslano.html")
+
+
+class PrikaziSporocilaHandler(BaseHandler):
+    def get(self):
+        vsa_sporocila = Sporocilo.query().order(Sporocilo.nastanek).fetch()
 
         view_vars = {
-            'ime': uporabnikovo_ime,
-            'sporocilo': uporabnikovo_sporocilo,
+            "vsa_sporocila": vsa_sporocila
         }
-        return self.render_template("prikazi.html", view_vars)
+
+        return self.render_template("prikazi_sporocila.html", view_vars)
 
 
-class ProcesirajSporociloHandler2(BaseHandler):
-    sprocila = []
-
-    def post(self):
-        uporabnikovo_ime = self.request.get("ime")
-        uporabnikovo_sporocilo = self.request.get("sporocilo")
-
-        pair = (uporabnikovo_ime, uporabnikovo_sporocilo)
-        self.sprocila.append(pair)
+class PosameznoSporocilo(BaseHandler):
+    def get(self, sporocilo_id):
+        sporocilo = Sporocilo.get_by_id(int(sporocilo_id))
 
         view_vars = {
-            'sporocila': self.sprocila
+            "sporocilo": sporocilo
         }
-        return self.render_template("prikazi2.html", view_vars)
+
+        return self.render_template("posamezno_sporocilo.html", view_vars)
+
 
 app = webapp2.WSGIApplication([
     webapp2.Route('/', MainHandler),
-    # webapp2.Route('/poslji-sporocilo', ProcesirajSporociloHandler),
-    webapp2.Route('/poslji-sporocilo', ProcesirajSporociloHandler2),
+    webapp2.Route('/poslji-sporocilo', PosljiSporociloHandler),
+    webapp2.Route('/prikazi-sporocila', PrikaziSporocilaHandler),
+    webapp2.Route('/sporocilo/<sporocilo_id:\d+>', PosameznoSporocilo),
 ], debug=True)
