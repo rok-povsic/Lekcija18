@@ -1,2 +1,1 @@
-Uporaba zahtevkov POST v Google App Engine.
-
+Uporaba podatkovne baze Google DataStore.
